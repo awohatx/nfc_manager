@@ -1,0 +1,23 @@
+@RunWith(AndroidJUnit4::class)
+class TagReaderTest {
+    private lateinit var tagReader: TagReader
+
+    @Before
+    fun setUp() {
+        tagReader = TagReader()
+    }
+
+    @Test
+    fun testReadNDEF() {
+        val mockTag = mock(Tag::class.java)
+        val result = tagReader.readNDEF(mockTag)
+        assertNull(result) // Assuming no NDEF data is present
+    }
+
+    @Test
+    fun testWriteNDEF() {
+        val mockTag = mock(Tag::class.java)
+        val result = tagReader.writeNDEF(mockTag, "Hello NFC")
+        assertFalse(result) // Assuming the tag is not writable
+    }
+}

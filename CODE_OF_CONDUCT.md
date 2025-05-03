@@ -17,6 +17,7 @@ diverse, inclusive, and healthy community.
 Examples of behavior that contributes to a positive environment for our
 community include:
 
+
 * Demonstrating empathy and kindness toward other people
 * Being respectful of differing opinions, viewpoints, and experiences
 * Giving and gracefully accepting constructive feedback
@@ -130,3 +131,118 @@ For answers to common questions about this code of conduct, see the FAQ at
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
+
+---
+
+```kotlin
+class HostCardEmulation : HostApduService() {
+    private val registeredAIDs = mutableMapOf<String, String>() // AID -> PIN
+
+    fun registerAID(aid: String, pin: String) {
+        registeredAIDs[aid] = pin
+    }
+
+    override fun processCommandApdu(commandApdu: ByteArray?, extras: Bundle?): ByteArray? {
+        val aid = extractAID(commandApdu)
+        val pin = extractPIN(commandApdu)
+
+        if (aid != null && registeredAIDs.containsKey(aid)) {
+            return if (registeredAIDs[aid] == pin) {
+                "9000".toByteArray() // Success
+            } else {
+                "6982".toByteArray() // Security condition not satisfied
+            }
+        }
+        return "6A82".toByteArray() // File not found
+    }
+
+    private fun extractAID(commandApdu: ByteArray?): String? {
+        // Logic to extract AID from APDU
+        return "A0000002471001" // Example AID
+    }
+
+    private fun extractPIN(commandApdu: ByteArray?): String? {
+        // Logic to extract PIN from APDU
+        return "1234" // Example PIN
+    }
+}
+
+class TagReader {
+    fun readNDEF(tag: Tag): String? {
+        val ndef = Ndef.get(tag)
+        return ndef?.cachedNdefMessage?.toString()
+    }
+
+    fun writeNDEF(tag: Tag, message: String): Boolean {
+        val ndef = Ndef.get(tag)
+        return try {
+            ndef.connect()
+            val ndefMessage = NdefMessage(NdefRecord.createTextRecord("en", message))
+            ndef.writeNdefMessage(ndefMessage)
+            true
+        } catch (e: Exception) {
+            false
+        } finally {
+            ndef.close()
+        }
+    }
+}
+
+sealed class NFCException(message: String) : Exception(message)
+
+class TagNotSupportedException : NFCException("The NFC tag is not supported.")
+class NDEFWriteException : NFCException("Failed to write NDEF message to the tag.")
+class HCERegistrationException : NFCException("Failed to register AID for Host Card Emulation.")
+
+import 'package:flutter/material.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+
+class NFCDiscoveryWidget extends StatelessWidget {
+  final Function(String) onTagDiscovered;
+
+  NFCDiscoveryWidget({required this.onTagDiscovered});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        bool isAvailable = await NfcManager.instance.isAvailable();
+        if (isAvailable) {
+          NfcManager.instance.startSession(onDiscovered: (NfcTag tag) {
+            onTagDiscovered(tag.data.toString());
+            NfcManager.instance.stopSession();
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('NFC is not available on this device')),
+          );
+        }
+      },
+      child: Text('Start NFC Discovery'),
+    );
+  }
+}
+
+@RunWith(AndroidJUnit4::class)
+class TagReaderTest {
+    private lateinit var tagReader: TagReader
+
+    @Before
+    fun setUp() {
+        tagReader = TagReader()
+    }
+
+    @Test
+    fun testReadNDEF() {
+        val mockTag = mock(Tag::class.java)
+        val result = tagReader.readNDEF(mockTag)
+        assertNull(result) // Assuming no NDEF data is present
+    }
+
+    @Test
+    fun testWriteNDEF() {
+        val mockTag = mock(Tag::class.java)
+        val result = tagReader.writeNDEF(mockTag, "Hello NFC")
+        assertFalse(result) // Assuming the tag is not writable
+    }
+}

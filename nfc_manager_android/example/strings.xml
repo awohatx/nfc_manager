@@ -1,0 +1,4 @@
+<resources>
+    <string name="service_description">NFC Host Card Emulation Service</string>
+    <string name="aid_group_description">Supported AIDs</string>
+</resources>

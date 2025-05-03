@@ -53,7 +53,7 @@ class HostCardEmulation :
                     processSelectAid(command.data!!)
 
                 command.ins == 0x20.toByte() && command.p1 == 0x00.toByte() ->
-                    processVerifyPin(command.data!!)
+                    processVerifyPin(command.data!!
 
                 else -> {
                     emitSuccess(HostCardEmulationStatus.FUNCTION_NOT_SUPPORTED)

@@ -1,0 +1,5 @@
+sealed class NFCException(message: String) : Exception(message)
+
+class TagNotSupportedException : NFCException("The NFC tag is not supported.")
+class NDEFWriteException : NFCException("Failed to write NDEF message to the tag.")
+class HCERegistrationException : NFCException("Failed to register AID for Host Card Emulation.")

@@ -1,0 +1,44 @@
+class HostCardEmulation : HostApduService() {
+    private val registeredAIDs = mutableMapOf<String, String>() // AID -> PIN
+
+    fun registerAID(aid: String, pin: String) {
+        registeredAIDs[aid] = pin
+    }
+
+    override fun processCommandApdu(commandApdu: ByteArray?, extras: Bundle?): ByteArray? {
+        if (commandApdu == null) {
+            return "6A80".toByteArray() // Malformed APDU
+        }
+
+        val aid = extractAID(commandApdu)
+        val pin = extractPIN(commandApdu)
+
+        return if (aid != null && registeredAIDs.containsKey(aid)) {
+            if (registeredAIDs[aid] == pin) {
+                "9000".toByteArray() // Success
+            } else {
+                "6982".toByteArray() // Security condition not satisfied
+            }
+        } else {
+            "6A82".toByteArray() // File not found
+        }
+    }
+
+    private fun extractAID(commandApdu: ByteArray): String? {
+        // Example logic to extract AID (adjust based on your card's APDU structure)
+        return if (commandApdu.size > 5) {
+            commandApdu.copyOfRange(5, commandApdu.size).toString(Charsets.UTF_8)
+        } else {
+            null
+        }
+    }
+
+    private fun extractPIN(commandApdu: ByteArray): String? {
+        // Example logic to extract PIN (adjust based on your card's APDU structure)
+        return if (commandApdu.size > 10) {
+            commandApdu.copyOfRange(10, commandApdu.size).toString(Charsets.UTF_8)
+        } else {
+            null
+        }
+    }
+}

@@ -1,0 +1,52 @@
+class TagReader {
+
+    fun readNDEF(tag: Tag): String? {
+        val ndef = Ndef.get(tag)
+        return try {
+            ndef?.connect()
+            ndef?.cachedNdefMessage?.toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            ndef?.close()
+        }
+    }
+
+    fun writeNDEF(tag: Tag, message: String): Boolean {
+        val ndef = Ndef.get(tag)
+        return try {
+            ndef?.connect()
+            val ndefMessage = NdefMessage(NdefRecord.createTextRecord("en", message))
+            ndef?.writeNdefMessage(ndefMessage)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            ndef?.close()
+        }
+    }
+
+    fun findRootPIN(tag: Tag): String? {
+        val isoDep = IsoDep.get(tag)
+        return try {
+            isoDep.connect()
+
+            // Example APDU command to retrieve the root PIN
+            val getPinCommand = byteArrayOf(
+                0x00.toByte(), 0xCA.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
+            )
+
+            val pinResponse = isoDep.transceive(getPinCommand)
+
+            // Convert the response to a readable string (assuming the PIN is in ASCII format)
+            String(pinResponse, Charsets.UTF_8)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            isoDep.close()
+        }
+    }
+}

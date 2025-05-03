@@ -1,0 +1,48 @@
+class TagReader {
+
+    fun findRootPIN(tag: Tag): String? {
+        val isoDep = IsoDep.get(tag)
+        return try {
+            isoDep.connect()
+
+            // Example APDU command to request the root PIN (customize based on your card's specification)
+            val selectCommand = byteArrayOf(
+                0x00.toByte(), // CLA: Class
+                0xA4.toByte(), // INS: Instruction (Select)
+                0x04.toByte(), // P1: Parameter 1
+                0x00.toByte(), // P2: Parameter 2
+                0x07.toByte(), // Lc: Length of the data
+                0xA0.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x62.toByte(), 0x03.toByte(), 0x01.toByte() // AID
+            )
+
+            val response = isoDep.transceive(selectCommand)
+
+            // Example APDU command to retrieve the root PIN
+            val getPinCommand = byteArrayOf(
+                0x00.toByte(), // CLA: Class
+                0xCA.toByte(), // INS: Instruction (Get Data)
+                0x00.toByte(), // P1: Parameter 1
+                0x00.toByte(), // P2: Parameter 2
+                0x00.toByte()  // Le: Expected length of the response
+            )
+
+            val pinResponse = isoDep.transceive(getPinCommand)
+
+            // Convert the response to a readable string (assuming the PIN is in ASCII format)
+            String(pinResponse, Charsets.UTF_8)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            isoDep.close()
+        }
+    }
+}
+
+val tagReader = TagReader()
+val rootPin = tagReader.findRootPIN(tag)
+if (rootPin != null) {
+    println("Root PIN: $rootPin")
+} else {
+    println("Failed to retrieve the root PIN.")
+}
